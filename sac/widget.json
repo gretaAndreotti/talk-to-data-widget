@@ -1,0 +1,51 @@
+{
+  "id": "com.myorg.talktodata",
+  "version": "2.1.0",
+  "name": "Talk to Your Data",
+  "description": "Context-aware reporting assistant. Assign a model in the Builder Panel — no scripting or linked analysis required.",
+  "newInstancePrefix": "TalkToData",
+  "webcomponents": [
+    {
+      "kind": "main",
+      "tag": "com-myorg-talk-to-data",
+      "url": "/main.js",
+      "integrity": "",
+      "ignoreIntegrity": true
+    }
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Header title shown inside the widget.",
+      "default": "Talk to Your Data"
+    },
+    "showDiagnostics": {
+      "type": "boolean",
+      "description": "Show binding diagnostics (recommended during setup, disable for end users).",
+      "default": true
+    },
+    "assistantMode": {
+      "type": "string",
+      "description": "Widget mode: diagnostic | guided | chat.",
+      "default": "diagnostic"
+    }
+  },
+  "methods": {},
+  "events": {},
+  "dataBindings": {
+    "mainBinding": {
+      "feeds": [
+        {
+          "id": "dimensions",
+          "description": "Assign dimensions from the model (e.g. Region, Product, Period). Widget auto-reads filtered members.",
+          "type": "dimension"
+        },
+        {
+          "id": "measures",
+          "description": "Assign measures from the model (e.g. EBIT, Revenue). Widget auto-reads filtered values.",
+          "type": "mainStructureMember"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+#   docker compose build             
+#   docker compose run --rm builder npm install
+#   docker compose run --rm builder npm run build
+#   docker compose run --rm builder npm run build:upload
+
+services:
+  builder:
+    build: .
+    volumes:
+      - .:/app          # mount the hello-widget/ folder into /app inside the container
+    working_dir: /app

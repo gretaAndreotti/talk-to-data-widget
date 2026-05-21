@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Talk to Your Data – Local Debug</title>
+  <script type="module" src="../dist/main.js"></script>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; }
+    body { display: flex; background: #f5f6f7; padding: 20px; box-sizing: border-box; gap: 20px; }
+
+    /* Simulate two SAC widget panels side by side */
+    .widget-frame {
+      flex: 1;
+      border: 2px dashed #c0c0c0;
+      border-radius: 4px;
+      background: #fff;
+      height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .frame-label {
+      background: #eee;
+      padding: 4px 10px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #666;
+      flex-shrink: 0;
+    }
+
+    /* Quick test controls */
+    .test-panel {
+      width: 300px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: calc(100vh - 40px);
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .test-panel h3 { margin: 0 0 8px 0; font-size: 13px; }
+    .test-panel button {
+      padding: 6px 10px; cursor: pointer; font-size: 11px;
+      background: #0a6ed1; color: #fff; border: none; border-radius: 3px;
+    }
+    .test-panel button.secondary {
+      background: #fff; color: #0a6ed1; border: 1px solid #0a6ed1;
+    }
+    .test-panel textarea {
+      width: 100%; height: 120px; font-size: 10px;
+      font-family: monospace; resize: vertical; box-sizing: border-box;
+    }
+    .test-panel label { font-size: 11px; color: #666; }
+  </style>
+</head>
+<body>
+
+  <!-- The widget frame — simulates what SAC shows on the canvas -->
+  <div class="widget-frame">
+    <div class="frame-label">com-myorg-talk-to-data (simulated SAC canvas)</div>
+    <com-myorg-talk-to-data id="widget" style="flex:1"></com-myorg-talk-to-data>
+  </div>
+
+  <!-- Test panel — simulates what a SAC script would do -->
+  <div class="test-panel">
+    <h3>🧪 Test Controls</h3>
+    <label>Simulate: SAC script pushes context</label>
+    <button onclick="sendSampleContext()">Send sample context</button>
+    <button onclick="sendPartialContext()" class="secondary">Send partial context (low confidence)</button>
+    <button onclick="sendBadJson()" class="secondary">Send bad JSON (error state)</button>
+    <button onclick="widget().clearContext()" class="secondary">Clear context</button>
+    <button onclick="widget().setActiveTarget('Chart_EBIT')" class="secondary">setActiveTarget('Chart_EBIT')</button>
+
+    <hr style="border:none;border-top:1px solid #eee"/>
+    <label>Custom payload (paste JSON here):</label>
+    <textarea id="custom-payload" placeholder='{"version":1,"source":"manual",...}'></textarea>
+    <button onclick="sendCustom()">Send custom payload</button>
+
+    <hr style="border:none;border-top:1px solid #eee"/>
+    <label>Event log:</label>
+    <div id="log" style="font-size:10px;color:#444;overflow-y:auto;max-height:200px;background:#f9f9f9;padding:5px;"></div>
+  </div>
+
+  <script type="module">
+    // Wait for the custom element to be defined before trying to use it
+    await customElements.whenDefined('com-myorg-talk-to-data')
+
+    window.widget = () => document.getElementById('widget')
+
+    // Log onContextNeeded events (fired when user clicks "Request Context")
+    window.widget().addEventListener('onContextNeeded', (e) => {
+      log(`onContextNeeded fired: ${JSON.stringify(e.detail)}`)
+    })
+
+    window.sendSampleContext = () => {
+      const payload = {
+        version: 1,
+        source: 'sac-script',
+        targetWidgetId: 'Chart_1',
+        targetWidgetLabel: 'EBIT by Region',
+        modelId: 'SAP_DEMO_FIN_PLANNING',
+        modelLabel: 'Financial Planning',
+        measures: ['EBIT'],
+        measureLabels: ['EBIT'],
+        dimensions: ['SAP_ALL_COMPANY', 'DATE'],
+        dimensionLabels: ['Company Code', 'Date'],
+        filters: [
+          {
+            dimension: 'SAP_ALL_COMPANY',
+            dimensionLabel: 'Company Code',
+            members: ['1000', '2000'],
+            memberLabels: ['Germany', 'USA'],
+            source: 'script'
+          },
+          {
+            dimension: 'DATE',
+            dimensionLabel: 'Fiscal Year/Period',
+            members: ['202601'],
+            memberLabels: ['Jan 2026'],
+            source: 'script'
+          }
+        ],
+        timeScope: { dimension: 'DATE', type: 'member', raw: '202601' },
+        versionScope: 'Actual',
+        confidence: 'high',
+        missing: [],
+        capturedAt: new Date().toISOString()
+      }
+      window.widget().setContextPayload(JSON.stringify(payload))
+      log('Sent full context payload')
+    }
+
+    window.sendPartialContext = () => {
+      const payload = {
+        version: 1,
+        source: 'sac-script',
+        targetWidgetId: 'Chart_1',
+        targetWidgetLabel: null,
+        modelId: null,
+        modelLabel: null,
+        measures: [],
+        measureLabels: [],
+        dimensions: [],
+        dimensionLabels: [],
+        filters: [],
+        timeScope: null,
+        versionScope: null,
+        confidence: 'low',
+        missing: ['model ID could not be read', 'time scope not accessible', 'version scope unknown'],
+        capturedAt: new Date().toISOString()
+      }
+      window.widget().setContextPayload(JSON.stringify(payload))
+      log('Sent partial context (low confidence)')
+    }
+
+    window.sendBadJson = () => {
+      window.widget().setContextPayload('{ this is not valid JSON }')
+      log('Sent bad JSON to trigger error state')
+    }
+
+    window.sendCustom = () => {
+      const raw = document.getElementById('custom-payload').value.trim()
+      if (!raw) { log('ERROR: textarea is empty'); return }
+      window.widget().setContextPayload(raw)
+      log('Sent custom payload')
+    }
+
+    function log(msg) {
+      const el = document.getElementById('log')
+      const time = new Date().toLocaleTimeString()
+      el.innerHTML = `<div>[${time}] ${msg}</div>` + el.innerHTML
+    }
+  </script>
+
+</body>
+</html>
+
