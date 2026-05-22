@@ -1,8 +1,8 @@
 {
   "id": "com.myorg.talktodata",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "name": "Talk to Your Data",
-  "description": "Context-aware reporting assistant. Assign a model in the Builder Panel — no scripting or linked analysis required.",
+  "description": "Context-aware reporting assistant with LLM backend. Assign a model in the Builder Panel — no scripting or linked analysis required.",
   "newInstancePrefix": "TalkToData",
   "webcomponents": [
     {
@@ -28,6 +28,16 @@
       "type": "string",
       "description": "Widget mode: diagnostic | guided | chat.",
       "default": "diagnostic"
+    },
+    "backendUrl": {
+      "type": "string",
+      "description": "Base URL of the backend API service (e.g. https://your-backend.com).",
+      "default": "http://localhost:8000"
+    },
+    "apiTimeoutMs": {
+      "type": "integer",
+      "description": "Request timeout in milliseconds for backend API calls.",
+      "default": 30000
     }
   },
   "methods": {},

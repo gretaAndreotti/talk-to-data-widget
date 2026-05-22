@@ -59,6 +59,8 @@ type WidgetProps = {
   title: string
   showDiagnostics: boolean
   assistantMode: 'diagnostic' | 'guided' | 'chat'
+  backendUrl: string
+  apiTimeoutMs: number
 }
 
 type ChatMessage = {
@@ -113,11 +115,8 @@ const DEFAULT_PROPS: WidgetProps = {
   title: 'Talk to Your Data',
   showDiagnostics: true,
   assistantMode: 'diagnostic',
-}
-
-const DEFAULT_API_CONFIG: ApiConfig = {
-  baseUrl: 'http://localhost:8000',
-  timeoutMs: 30000,
+  backendUrl: 'http://localhost:8000',
+  apiTimeoutMs: 30000,
 }
 
 const DEFAULT_STATE: AssistantState = {
@@ -125,7 +124,7 @@ const DEFAULT_STATE: AssistantState = {
   context: null,
   bindingConfigured: false,
   messages: [],
-  apiConfig: DEFAULT_API_CONFIG,
+  apiConfig: { baseUrl: DEFAULT_PROPS.backendUrl, timeoutMs: DEFAULT_PROPS.apiTimeoutMs },
   conversationId: undefined,
   loading: false,
 }
@@ -142,6 +141,8 @@ function mergeProps(current: WidgetProps, changed: Record<string, unknown>): Wid
     assistantMode: (changed['assistantMode'] === 'guided' || changed['assistantMode'] === 'chat')
       ? changed['assistantMode'] as 'guided' | 'chat'
       : current.assistantMode,
+    backendUrl: typeof changed['backendUrl'] === 'string' ? changed['backendUrl'] : current.backendUrl,
+    apiTimeoutMs: typeof changed['apiTimeoutMs'] === 'number' ? changed['apiTimeoutMs'] : current.apiTimeoutMs,
   }
 }
 
@@ -568,9 +569,11 @@ class TalkToDataWidget extends HTMLElement {
   onCustomWidgetBeforeUpdate(changedProperties: Record<string, unknown>): void {
     try {
       if (!changedProperties) return
+      const props = mergeProps(this.state.props, changedProperties)
       this.state = {
         ...this.state,
-        props: mergeProps(this.state.props, changedProperties),
+        props,
+        apiConfig: { baseUrl: props.backendUrl, timeoutMs: props.apiTimeoutMs },
       }
     } catch (e) {
       console.error('[TalkToData] onCustomWidgetBeforeUpdate error:', e)
