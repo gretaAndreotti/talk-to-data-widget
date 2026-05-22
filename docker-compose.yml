@@ -7,5 +7,5 @@ services:
   builder:
     build: .
     volumes:
-      - .:/app          # mount the hello-widget/ folder into /app inside the container
+      - .:/app
     working_dir: /app
